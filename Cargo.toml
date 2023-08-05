@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+  "cli_app",
+  "event_store"
+]
