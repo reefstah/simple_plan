@@ -16,7 +16,7 @@ impl PlannableEventsRepository {
             sql_connection: establish_connection(database_url)?,
         })
     }
-    fn save(mut self, eventrow: Vec<PlannableEventRow>) -> Result<(), diesel::result::Error> {
+    fn save(&mut self, eventrow: Vec<PlannableEventRow>) -> Result<(), diesel::result::Error> {
         insert_into(plannable_events)
             .values(&eventrow)
             .execute(&mut self.sql_connection)
@@ -45,6 +45,15 @@ impl PlannableEventsRepository {
         )
         .execute(&mut self.sql_connection)
         .map(|size| ())
+    }
+    fn get_plannable_id(
+        mut self,
+        id: &String,
+    ) -> Result<Vec<PlannableEventRow>, diesel::result::Error> {
+        plannable_events
+            .filter(plannable_id.eq(id))
+            .select(PlannableEventRow::as_select())
+            .load(&mut self.sql_connection)
     }
 }
 fn establish_connection(database_url: &str) -> Result<SqliteConnection, Error> {
@@ -84,5 +93,27 @@ mod tests {
         let result = repository.save(plannables);
         println!("{:?}", result);
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn read() {
+        let database_url = "/tmp/simple_plan_read.db";
+        let mut repository = PlannableEventsRepository::initialize(database_url).unwrap();
+        repository.drop_table().unwrap();
+        repository.create_table().unwrap();
+
+        let plannables = vec![PlannableEventRow {
+            event_id: String::from("7fe8b15d-1a3e-461d-9057-99ef10459a0e")
+                .as_bytes()
+                .to_vec(),
+            plannable_id: String::from("1"),
+            sequence: 0,
+            body: String::from("").as_bytes().to_vec(),
+        }];
+        repository.save(plannables.clone()).unwrap();
+        let result = repository
+            .get_plannable_id(&plannables[0].plannable_id)
+            .unwrap();
+        assert_eq!(result, plannables);
     }
 }
