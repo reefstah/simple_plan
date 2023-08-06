@@ -46,16 +46,14 @@ impl PlannableEventsRepository {
         .execute(&mut self.sql_connection)
         .map(|size| ())
     }
-    fn get_plannable_id(
-        mut self,
-        id: &String,
-    ) -> Result<Vec<PlannableEventRow>, diesel::result::Error> {
+    fn read(mut self, id: &String) -> Result<Vec<PlannableEventRow>, diesel::result::Error> {
         plannable_events
             .filter(plannable_id.eq(id))
             .select(PlannableEventRow::as_select())
             .load(&mut self.sql_connection)
     }
 }
+
 fn establish_connection(database_url: &str) -> Result<SqliteConnection, Error> {
     dotenvy::dotenv().map_err(|_error| Error::new(ErrorKind::Other, "error"))?;
     Ok(SqliteConnection::establish(&database_url)
@@ -63,6 +61,8 @@ fn establish_connection(database_url: &str) -> Result<SqliteConnection, Error> {
 }
 #[cfg(test)]
 mod tests {
+
+    use std::result;
 
     use crate::models::PlannableEventRow;
 
@@ -91,10 +91,52 @@ mod tests {
             body: String::from("").as_bytes().to_vec(),
         }];
         let result = repository.save(plannables);
-        println!("{:?}", result);
         assert!(result.is_ok());
     }
 
+    #[test]
+    fn given_existingplannableid_when_savemultiplewithduplicate_then_rollback() {
+        let database_url = "/tmp/simple_plan_save_fail.db";
+        let mut repository = PlannableEventsRepository::initialize(database_url).unwrap();
+        repository.drop_table().unwrap();
+        repository.create_table().unwrap();
+        //GIVEN an exisiting plannable id
+        let plannables = vec![PlannableEventRow {
+            event_id: String::from("7fe8b15d-1a3e-461d-9057-99ef10459a0e")
+                .as_bytes()
+                .to_vec(),
+            plannable_id: String::from("1"),
+            sequence: 0,
+            body: String::from("something").as_bytes().to_vec(),
+        }];
+        repository.save(plannables.clone());
+
+        // WHEN two plannables are added, where plannable 2 is the duplicate of exisiting
+        // plannable
+        let plannable1 = PlannableEventRow {
+            event_id: String::from("a83bf643-20a7-4dcc-9151-d1a1cb4f0126")
+                .as_bytes()
+                .to_vec(),
+            plannable_id: String::from("1"),
+            sequence: 1,
+            body: String::from("").as_bytes().to_vec(),
+        };
+        let plannable2 = PlannableEventRow {
+            event_id: String::from("7fe8b15d-1a3e-461d-9057-99ef10459a0e")
+                .as_bytes()
+                .to_vec(),
+            plannable_id: String::from("1"),
+            sequence: 0,
+            body: String::from("").as_bytes().to_vec(),
+        };
+
+        let plannables_with_duplicates = vec![plannable1, plannable2];
+        // THEN the save should give back an error, and rollback the whole action
+        repository.save(plannables_with_duplicates);
+        let read_output = repository.read(&String::from("1")).unwrap();
+        //Test validity of THEN by Comparing the output to the original DB insertion to test rollback
+        assert_eq!(read_output, plannables);
+    }
     #[test]
     fn read() {
         let database_url = "/tmp/simple_plan_read.db";
@@ -111,9 +153,18 @@ mod tests {
             body: String::from("").as_bytes().to_vec(),
         }];
         repository.save(plannables.clone()).unwrap();
-        let result = repository
-            .get_plannable_id(&plannables[0].plannable_id)
-            .unwrap();
+        let result = repository.read(&plannables[0].plannable_id).unwrap();
         assert_eq!(result, plannables);
+    }
+
+    #[test]
+    fn read_missing_or_incorrect_id() {
+        let database_url = "/tmp/simple_plan_read_missingid.db";
+        let mut repository = PlannableEventsRepository::initialize(database_url).unwrap();
+        repository.drop_table().unwrap();
+        repository.create_table().unwrap();
+        let missingid = String::from("missingId_orIncorrectId");
+        let result = repository.read(&missingid).unwrap();
+        assert_eq!(result.len(), 0);
     }
 }
