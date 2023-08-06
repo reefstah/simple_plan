@@ -6,17 +6,17 @@ use diesel::prelude::*;
 use diesel::SqliteConnection;
 use std::io::Error;
 use std::io::ErrorKind;
-struct PlannableEventsRepository {
+pub struct PlannableEventsRepository {
     sql_connection: SqliteConnection,
 }
 
 impl PlannableEventsRepository {
-    fn initialize(database_url: &str) -> Result<Self, std::io::Error> {
+    pub fn initialize(database_url: &str) -> Result<Self, std::io::Error> {
         Ok(Self {
             sql_connection: establish_connection(database_url)?,
         })
     }
-    fn save(&mut self, eventrow: Vec<PlannableEventRow>) -> Result<(), diesel::result::Error> {
+    pub fn save(&mut self, eventrow: Vec<PlannableEventRow>) -> Result<(), diesel::result::Error> {
         insert_into(plannable_events)
             .values(&eventrow)
             .execute(&mut self.sql_connection)
@@ -27,13 +27,13 @@ impl PlannableEventsRepository {
             .execute(&mut self.sql_connection)
             .map(|size| ())
     }
-    fn drop_table(&mut self) -> Result<(), diesel::result::Error> {
+    pub fn drop_table(&mut self) -> Result<(), diesel::result::Error> {
         diesel::sql_query("DROP TABLE IF EXISTS plannable_events")
             .execute(&mut self.sql_connection)
             .map(|size| ())
     }
 
-    fn create_table(&mut self) -> Result<(), diesel::result::Error> {
+    pub fn create_table(&mut self) -> Result<(), diesel::result::Error> {
         diesel::sql_query(
             "CREATE TABLE plannable_events (
              event_id BLOB PRIMARY KEY NOT NULL,

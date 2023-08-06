@@ -1,6 +1,7 @@
 [workspace]
 
 members = [
-  "cli_app",
-  "event_store"
+ "cli_app",
+ "event_store",
+ "entities"
 ]
