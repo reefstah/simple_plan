@@ -6,6 +6,7 @@ use diesel::prelude::*;
 use diesel::SqliteConnection;
 use std::io::Error;
 use std::io::ErrorKind;
+
 pub struct PlannableEventsRepository {
     sql_connection: SqliteConnection,
 }
@@ -46,7 +47,7 @@ impl PlannableEventsRepository {
         .execute(&mut self.sql_connection)
         .map(|size| ())
     }
-    fn read(mut self, id: &String) -> Result<Vec<PlannableEventRow>, diesel::result::Error> {
+    pub fn read(&mut self, id: &String) -> Result<Vec<PlannableEventRow>, diesel::result::Error> {
         plannable_events
             .filter(plannable_id.eq(id))
             .select(PlannableEventRow::as_select())
@@ -62,11 +63,8 @@ fn establish_connection(database_url: &str) -> Result<SqliteConnection, Error> {
 #[cfg(test)]
 mod tests {
 
-    use std::result;
-
-    use crate::models::PlannableEventRow;
-
     use super::PlannableEventsRepository;
+    use crate::models::PlannableEventRow;
 
     #[test]
     fn initialize() {
