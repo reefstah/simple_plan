@@ -21,17 +21,17 @@ impl PlannableEventsRepository {
         insert_into(plannable_events)
             .values(&eventrow)
             .execute(&mut self.sql_connection)
-            .map(|size| ())
+            .map(|_size| ())
     }
     fn reset(&mut self) -> Result<(), diesel::result::Error> {
         delete(plannable_events)
             .execute(&mut self.sql_connection)
-            .map(|size| ())
+            .map(|_size| ())
     }
     pub fn drop_table(&mut self) -> Result<(), diesel::result::Error> {
         diesel::sql_query("DROP TABLE IF EXISTS plannable_events")
             .execute(&mut self.sql_connection)
-            .map(|size| ())
+            .map(|_size| ())
     }
 
     pub fn create_table(&mut self) -> Result<(), diesel::result::Error> {
@@ -45,7 +45,7 @@ impl PlannableEventsRepository {
              ON CONFLICT ROLLBACK)",
         )
         .execute(&mut self.sql_connection)
-        .map(|size| ())
+        .map(|_size| ())
     }
     pub fn read(&mut self, id: &String) -> Result<Vec<PlannableEventRow>, diesel::result::Error> {
         plannable_events
@@ -107,7 +107,7 @@ mod tests {
             sequence: 0,
             body: String::from("something").as_bytes().to_vec(),
         }];
-        repository.save(plannables.clone());
+        repository.save(plannables.clone()).unwrap();
 
         // WHEN two plannables are added, where plannable 2 is the duplicate of exisiting
         // plannable
@@ -130,7 +130,8 @@ mod tests {
 
         let plannables_with_duplicates = vec![plannable1, plannable2];
         // THEN the save should give back an error, and rollback the whole action
-        repository.save(plannables_with_duplicates);
+        let save_result = repository.save(plannables_with_duplicates);
+        assert!(save_result.is_err());
         let read_output = repository.read(&String::from("1")).unwrap();
         //Test validity of THEN by Comparing the output to the original DB insertion to test rollback
         assert_eq!(read_output, plannables);

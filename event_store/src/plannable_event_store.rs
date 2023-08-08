@@ -12,11 +12,21 @@ pub struct TodoEventStore {
 impl TodoEventStore {
     pub fn new(database_url: &str) -> Result<Self, std::io::Error> {
         let repository = PlannableEventsRepository::initialize(database_url)?;
-        Ok(Self::new_internal(repository))
+        Ok(Self { repository })
     }
 
-    fn new_internal(repository: PlannableEventsRepository) -> Self {
-        Self { repository }
+    #[cfg(test)]
+    pub fn clean(database_url: &str) -> Result<Self, std::io::Error> {
+        let mut instance = Self::new(database_url)?;
+        instance
+            .repository
+            .drop_table()
+            .map_err(|error| Error::new(ErrorKind::Other, error))?;
+        instance
+            .repository
+            .create_table()
+            .map_err(|error| Error::new(ErrorKind::Other, error))?;
+        Ok(instance)
     }
 
     fn save(&mut self, todocreatedsevents: Vec<TodoCreatedEvent>) -> Result<(), std::io::Error> {
@@ -42,7 +52,6 @@ impl TodoEventStore {
 #[cfg(test)]
 mod tests {
 
-    use super::PlannableEventsRepository;
     use crate::plannable_event_store::TodoEventStore;
     use entities::TodoCreatedEvent;
     use uuid::uuid;
@@ -50,11 +59,7 @@ mod tests {
     #[test]
     fn given_todocreatedevent_when_savetorepository_then_repositoryhasoneentry() {
         let database_url = "/tmp/simple_plan_savetodoevent.db";
-        let mut repository = PlannableEventsRepository::initialize(database_url).unwrap();
-        repository.drop_table().unwrap();
-        repository.create_table().unwrap();
-
-        let mut eventstore = TodoEventStore::new_internal(repository);
+        let mut eventstore = TodoEventStore::clean(database_url).unwrap();
 
         let plannables = vec![TodoCreatedEvent {
             event_id: uuid!("67e55044-10b1-426f-9247-bb680e5fe0c8"),
@@ -70,11 +75,7 @@ mod tests {
     #[test]
     fn given_todoid_when_read_then_returnalleventsforthetodoid() {
         let database_url = "/tmp/simple_plan_readtodoevent.db";
-        let mut repository = PlannableEventsRepository::initialize(database_url).unwrap();
-        repository.drop_table().unwrap();
-        repository.create_table().unwrap();
-
-        let mut eventstore = TodoEventStore::new_internal(repository);
+        let mut eventstore = TodoEventStore::clean(database_url).unwrap();
 
         let plannables = vec![TodoCreatedEvent {
             event_id: uuid!("67e55044-10b1-426f-9247-bb680e5fe0c8"),
@@ -83,7 +84,7 @@ mod tests {
             title: String::from("some title"),
             end_date: None,
         }];
-        eventstore.save(plannables.clone());
+        eventstore.save(plannables.clone()).unwrap();
         let todo_id = uuid!("57e55044-10b1-426f-9247-bb680e5fe0c8");
         let result = eventstore.read(todo_id).unwrap();
         assert_eq!(result, plannables);
