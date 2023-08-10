@@ -53,6 +53,7 @@ impl TodoEventStore {
 mod tests {
 
     use crate::plannable_event_store::TodoEventStore;
+    use chrono::NaiveDate;
     use entities::todo_events::TodoCreatedEvent;
     use uuid::uuid;
 
@@ -65,8 +66,13 @@ mod tests {
             event_id: uuid!("67e55044-10b1-426f-9247-bb680e5fe0c8"),
             todo_id: uuid!("57e55044-10b1-426f-9247-bb680e5fe0c8"),
             sequence: 0,
-            title: String::from(""),
-            end_date: None,
+            title: String::from("Read Rust Book"),
+            end_date: Some(
+                NaiveDate::from_ymd_opt(2023, 9, 29)
+                    .unwrap()
+                    .and_hms_opt(9, 10, 11)
+                    .unwrap(),
+            ),
         }];
         let result = eventstore.save(plannables);
         assert!(result.is_ok());
@@ -82,11 +88,17 @@ mod tests {
             todo_id: uuid!("57e55044-10b1-426f-9247-bb680e5fe0c8"),
             sequence: 0,
             title: String::from("some title"),
-            end_date: None,
+            end_date: Some(
+                NaiveDate::from_ymd_opt(2023, 9, 29)
+                    .unwrap()
+                    .and_hms_opt(0, 0, 0)
+                    .unwrap(),
+            ),
         }];
         eventstore.save(plannables.clone()).unwrap();
         let todo_id = uuid!("57e55044-10b1-426f-9247-bb680e5fe0c8");
         let result = eventstore.read(todo_id).unwrap();
+        print!("{:?}", result);
         assert_eq!(result, plannables);
     }
 }
