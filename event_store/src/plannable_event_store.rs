@@ -1,6 +1,6 @@
 use crate::models::PlannableEventRow;
 use crate::plannable_events_repository::PlannableEventsRepository;
-use entities::TodoCreatedEvent;
+use entities::todo_events::TodoCreatedEvent;
 use std::io::Error;
 use std::io::ErrorKind;
 use uuid::Uuid;
@@ -53,7 +53,7 @@ impl TodoEventStore {
 mod tests {
 
     use crate::plannable_event_store::TodoEventStore;
-    use entities::TodoCreatedEvent;
+    use entities::todo_events::TodoCreatedEvent;
     use uuid::uuid;
 
     #[test]

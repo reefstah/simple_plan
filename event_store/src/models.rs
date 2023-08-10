@@ -1,6 +1,6 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use entities::TodoCreatedEvent;
+use entities::todo_events::TodoCreatedEvent;
 use serde::{Deserialize, Serialize};
 use std::str;
 use uuid::Uuid;
