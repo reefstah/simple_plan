@@ -55,7 +55,7 @@ mod tests {
     use crate::plannable_event_store::TodoEventStore;
     use chrono::NaiveDate;
     use entities::todo_events::TodoCreatedEvent;
-    use uuid::uuid;
+    use uuid::Uuid;
 
     #[test]
     fn given_todocreatedevent_when_savetorepository_then_repositoryhasoneentry() {
@@ -63,10 +63,10 @@ mod tests {
         let mut eventstore = TodoEventStore::clean(database_url).unwrap();
 
         let plannables = vec![TodoCreatedEvent {
-            event_id: uuid!("67e55044-10b1-426f-9247-bb680e5fe0c8"),
-            todo_id: uuid!("57e55044-10b1-426f-9247-bb680e5fe0c8"),
+            event_id: Uuid::new_v4(),
+            todo_id: Uuid::new_v4(),
             sequence: 0,
-            title: String::from("Read Rust Book"),
+            title: String::from("Read rust book"),
             end_date: Some(
                 NaiveDate::from_ymd_opt(2023, 9, 29)
                     .unwrap()
@@ -82,12 +82,57 @@ mod tests {
     fn given_todoid_when_read_then_returnalleventsforthetodoid() {
         let database_url = "/tmp/simple_plan_readtodoevent.db";
         let mut eventstore = TodoEventStore::clean(database_url).unwrap();
-
-        let plannables = vec![TodoCreatedEvent {
-            event_id: uuid!("67e55044-10b1-426f-9247-bb680e5fe0c8"),
-            todo_id: uuid!("57e55044-10b1-426f-9247-bb680e5fe0c8"),
+        let todo_id = Uuid::new_v4();
+        let todo_created = TodoCreatedEvent {
+            event_id: Uuid::new_v4(),
+            todo_id: todo_id.clone(),
             sequence: 0,
-            title: String::from("some title"),
+            title: String::from("Buy rust book"),
+            end_date: Some(
+                NaiveDate::from_ymd_opt(2023, 9, 29)
+                    .unwrap()
+                    .and_hms_opt(0, 0, 0)
+                    .unwrap(),
+            ),
+        };
+        let todo_changed = TodoCreatedEvent {
+            event_id: Uuid::new_v4(),
+            todo_id: todo_id.clone(),
+            sequence: 1,
+            title: String::from("Read rust book"),
+            end_date: Some(
+                NaiveDate::from_ymd_opt(2023, 9, 29)
+                    .unwrap()
+                    .and_hms_opt(0, 0, 0)
+                    .unwrap(),
+            ),
+        };
+        let plannables = vec![todo_created, todo_changed];
+        eventstore.save(plannables.clone()).unwrap();
+        let result = eventstore.read(todo_id).unwrap();
+        assert_eq!(result, plannables);
+    }
+
+    #[test]
+    fn given_todoid_when_doesnotexist_then_returnnoevents() {
+        let database_url = "/tmp/simple_plan_readnoevent.db";
+        let mut eventstore = TodoEventStore::clean(database_url).unwrap();
+        let todo_id = Uuid::new_v4();
+        let result = eventstore.read(todo_id).unwrap();
+        assert_eq!(result.len(), 0);
+    }
+
+    #[test]
+    fn given_existingtodoid_when_savemultiplewithduplicate_then_rollback() {
+        //GIVEN initial event
+        let database_url = "/tmp/simple_plan_adduplicaterollback.db";
+        let mut eventstore = TodoEventStore::clean(database_url).unwrap();
+        let todo_id = Uuid::new_v4();
+        let todo_created = vec![TodoCreatedEvent {
+            event_id: Uuid::new_v4(),
+            todo_id: todo_id.clone(),
+            sequence: 0,
+            title: String::from("Buy rust book"),
             end_date: Some(
                 NaiveDate::from_ymd_opt(2023, 9, 29)
                     .unwrap()
@@ -95,10 +140,41 @@ mod tests {
                     .unwrap(),
             ),
         }];
-        eventstore.save(plannables.clone()).unwrap();
-        let todo_id = uuid!("57e55044-10b1-426f-9247-bb680e5fe0c8");
-        let result = eventstore.read(todo_id).unwrap();
-        print!("{:?}", result);
-        assert_eq!(result, plannables);
+        eventstore.save(todo_created.clone()).unwrap();
+        let todo_changed = vec![
+            TodoCreatedEvent {
+                event_id: Uuid::new_v4(),
+                todo_id: todo_id.clone(),
+                sequence: 1,
+                title: String::from("Read rust book"),
+                end_date: Some(
+                    NaiveDate::from_ymd_opt(2023, 9, 29)
+                        .unwrap()
+                        .and_hms_opt(0, 0, 0)
+                        .unwrap(),
+                ),
+            },
+            TodoCreatedEvent {
+                event_id: Uuid::new_v4(),
+                todo_id: todo_id.clone(),
+                sequence: 0,
+                title: String::from("Sell rust book"),
+                end_date: Some(
+                    NaiveDate::from_ymd_opt(2023, 9, 29)
+                        .unwrap()
+                        .and_hms_opt(0, 0, 0)
+                        .unwrap(),
+                ),
+            },
+        ];
+
+        //WHEN Save duplicate, the combination of sequence and todo_id has to be unique, DB
+        //constraint
+        let result = eventstore.save(todo_changed);
+        //THEN error
+        assert!(result.is_err());
+        let read_todo_created = eventstore.read(todo_id).unwrap();
+        //Test rollback of THEN by comparing the output to the original DB insertion to test rollback
+        assert_eq!(read_todo_created, todo_created);
     }
 }
