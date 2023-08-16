@@ -3,5 +3,6 @@
 members = [
  "cli_app",
  "event_store",
- "entities"
+ "entities",
+ "usecases"
 ]

@@ -15,21 +15,24 @@ impl TodoEventStore {
         Ok(Self { repository })
     }
 
-    #[cfg(test)]
+    //#[cfg(test)]
     pub fn clean(database_url: &str) -> Result<Self, std::io::Error> {
         let mut instance = Self::new(database_url)?;
         instance
             .repository
             .drop_table()
-            .map_err(|error| Error::new(ErrorKind::Other, error))?;
+            .map_err(|_error| Error::new(ErrorKind::Other, "Drop Table failed"))?;
         instance
             .repository
             .create_table()
-            .map_err(|error| Error::new(ErrorKind::Other, error))?;
+            .map_err(|_error| Error::new(ErrorKind::Other, "Create table failed"))?;
         Ok(instance)
     }
 
-    fn save(&mut self, todocreatedsevents: Vec<TodoCreatedEvent>) -> Result<(), std::io::Error> {
+    pub fn save(
+        &mut self,
+        todocreatedsevents: Vec<TodoCreatedEvent>,
+    ) -> Result<(), std::io::Error> {
         let rows: Vec<PlannableEventRow> = todocreatedsevents
             .into_iter()
             .map(|event| event.into())
@@ -39,10 +42,19 @@ impl TodoEventStore {
             .map_err(|_error| Error::new(ErrorKind::Other, "error"))
     }
 
-    fn read(&mut self, todo_id: Uuid) -> Result<Vec<TodoCreatedEvent>, std::io::Error> {
+    pub fn read(&mut self, todo_id: Uuid) -> Result<Vec<TodoCreatedEvent>, std::io::Error> {
         let rows = self
             .repository
             .read(&todo_id.to_string())
+            .map_err(|_error| Error::new(ErrorKind::Other, "error"))?;
+
+        Ok(rows.into_iter().map(|row| row.into()).collect())
+    }
+
+    pub fn get_all(&mut self) -> Result<Vec<TodoCreatedEvent>, std::io::Error> {
+        let rows = self
+            .repository
+            .get_all()
             .map_err(|_error| Error::new(ErrorKind::Other, "error"))?;
 
         Ok(rows.into_iter().map(|row| row.into()).collect())
@@ -51,6 +63,8 @@ impl TodoEventStore {
 
 #[cfg(test)]
 mod tests {
+
+    use std::result;
 
     use crate::plannable_event_store::TodoEventStore;
     use chrono::NaiveDate;
@@ -74,8 +88,10 @@ mod tests {
                     .unwrap(),
             ),
         }];
-        let result = eventstore.save(plannables);
+        let result = eventstore.save(plannables.clone());
         assert!(result.is_ok());
+        let result = eventstore.get_all().unwrap();
+        assert_eq!(result, plannables);
     }
 
     #[test]

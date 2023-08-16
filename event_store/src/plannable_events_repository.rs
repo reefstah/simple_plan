@@ -33,7 +33,6 @@ impl PlannableEventsRepository {
             .execute(&mut self.sql_connection)
             .map(|_size| ())
     }
-
     pub fn create_table(&mut self) -> Result<(), diesel::result::Error> {
         diesel::sql_query(
             "CREATE TABLE plannable_events (
@@ -53,10 +52,14 @@ impl PlannableEventsRepository {
             .select(PlannableEventRow::as_select())
             .load(&mut self.sql_connection)
     }
+    pub fn get_all(&mut self) -> Result<Vec<PlannableEventRow>, diesel::result::Error> {
+        plannable_events
+            .select(PlannableEventRow::as_select())
+            .load(&mut self.sql_connection)
+    }
 }
 
 fn establish_connection(database_url: &str) -> Result<SqliteConnection, Error> {
-    dotenvy::dotenv().map_err(|_error| Error::new(ErrorKind::Other, "error"))?;
     Ok(SqliteConnection::establish(&database_url)
-        .map_err(|_error| Error::new(ErrorKind::Other, "error"))?)
+        .map_err(|_error| Error::new(ErrorKind::Other, "SqliteConnection"))?)
 }
