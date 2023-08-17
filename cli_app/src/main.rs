@@ -1,7 +1,9 @@
 use anyhow::Result;
+use chrono::NaiveDateTime;
 use clap::{Parser, Subcommand};
+use usecases::add_todo_usecase::AddTodoUsecase;
 
-#[derive(Parser)]
+#[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 #[command(propagate_version = true)]
 struct Cli {
@@ -9,23 +11,42 @@ struct Cli {
     command: Command,
 }
 
-#[derive(Subcommand)]
+#[derive(Subcommand, Debug)]
 enum Command {
     Todo(TodoCli),
 }
 
-#[derive(Parser)]
+#[derive(Parser, Debug)]
 struct TodoCli {
     #[command(subcommand)]
     command: TodoCommand,
 }
 
-#[derive(Subcommand)]
+#[derive(Subcommand, Debug)]
 enum TodoCommand {
-    Add { title: String },
+    Add {
+        title: String,
+        #[arg(value_parser = parse_duration)]
+        end_date: Option<NaiveDateTime>,
+    },
+}
+
+fn parse_duration(date: &str) -> Result<NaiveDateTime, chrono::ParseError> {
+    let parse_from_str = NaiveDateTime::parse_from_str;
+    let end_date = parse_from_str(date, "%Y-%m-%d %H:%M:%S");
+    end_date
 }
 
 fn main() -> Result<()> {
-    let _args = Cli::parse();
+    let cli = Cli::parse();
+
+    match &cli.command {
+        Command::Todo(TodoCli { command }) => match command {
+            TodoCommand::Add { title, end_date } => {
+                println!("{:?}", title);
+                println!("{:?}", end_date);
+            }
+        },
+    }
     Ok(())
 }

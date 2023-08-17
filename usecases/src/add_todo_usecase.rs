@@ -1,7 +1,7 @@
 use chrono::NaiveDateTime;
 use entities::todo_events::TodoCreatedEvent;
 use uuid::Uuid;
-struct AddTodoUsecase<'a> {
+pub struct AddTodoUsecase<'a> {
     store_todo_events: &'a mut dyn StoreTodoEvents,
 }
 
@@ -24,14 +24,11 @@ pub trait StoreTodoEvents {
 
 #[cfg(test)]
 mod tests {
-    use std::result;
-
     use super::AddTodoUsecase;
     use crate::add_todo_usecase::StoreTodoEvents;
     use chrono::NaiveDate;
     use entities::todo_events::TodoCreatedEvent;
     use event_store::plannable_event_store::TodoEventStore;
-    use uuid::Uuid;
 
     //Used for testing to call store functions
     struct TestEventStore {
