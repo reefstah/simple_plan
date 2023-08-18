@@ -28,7 +28,8 @@ impl From<TodoCreatedEvent> for PlannableEventRow {
             end_date: todo_created_events.end_date,
         };
         PlannableEventRow {
-            event_id: (*todo_created_events.event_id.as_bytes()).to_vec(),
+            //event_id: (*todo_created_events.event_id.as_bytes()).to_vec(),
+            event_id: todo_created_events.event_id.to_string().into(),
             plannable_id: todo_created_events.todo_id.to_string(),
             sequence: todo_created_events.sequence,
             body: serde_json::to_string(&body).unwrap().into(),
@@ -41,7 +42,7 @@ impl From<PlannableEventRow> for TodoCreatedEvent {
         let deserialized: TodoBody =
             serde_json::from_str(str::from_utf8(&row.body).unwrap()).unwrap();
         TodoCreatedEvent {
-            event_id: Uuid::from_slice(&row.event_id).unwrap(),
+            event_id: Uuid::parse_str(str::from_utf8(&row.event_id).unwrap()).unwrap(),
             todo_id: Uuid::parse_str(&row.plannable_id).unwrap(),
             sequence: row.sequence,
             title: deserialized.title,

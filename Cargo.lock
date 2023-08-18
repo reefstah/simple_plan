@@ -169,6 +169,8 @@ dependencies = [
  "anyhow",
  "chrono",
  "clap",
+ "entities",
+ "event_store",
  "usecases",
 ]
 

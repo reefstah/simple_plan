@@ -5,8 +5,12 @@ pub struct AddTodoUsecase<'a> {
     store_todo_events: &'a mut dyn StoreTodoEvents,
 }
 
-impl AddTodoUsecase<'_> {
-    fn execute(self, title: String, end_date: Option<NaiveDateTime>) -> Result<(), std::io::Error> {
+impl<'a> AddTodoUsecase<'a> {
+    pub fn execute(
+        self,
+        title: String,
+        end_date: Option<NaiveDateTime>,
+    ) -> Result<(), std::io::Error> {
         let todo = vec![TodoCreatedEvent {
             title,
             end_date,
@@ -14,12 +18,15 @@ impl AddTodoUsecase<'_> {
             event_id: Uuid::new_v4(),
             sequence: 0,
         }];
-        self.store_todo_events.store(todo)
+        self.store_todo_events.save(todo)
+    }
+    pub fn new(store_todo_events: &'a mut dyn StoreTodoEvents) -> Self {
+        Self { store_todo_events }
     }
 }
 
 pub trait StoreTodoEvents {
-    fn store(&mut self, todo_events: Vec<TodoCreatedEvent>) -> Result<(), std::io::Error>;
+    fn save(&mut self, todo_events: Vec<TodoCreatedEvent>) -> Result<(), std::io::Error>;
 }
 
 #[cfg(test)]
@@ -49,7 +56,7 @@ mod tests {
     }
 
     impl StoreTodoEvents for TestEventStore {
-        fn store(&mut self, todo_events: Vec<TodoCreatedEvent>) -> Result<(), std::io::Error> {
+        fn save(&mut self, todo_events: Vec<TodoCreatedEvent>) -> Result<(), std::io::Error> {
             self.real_event_store.save(todo_events)
         }
     }

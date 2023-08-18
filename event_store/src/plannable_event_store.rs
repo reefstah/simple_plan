@@ -64,8 +64,6 @@ impl TodoEventStore {
 #[cfg(test)]
 mod tests {
 
-    use std::result;
-
     use crate::plannable_event_store::TodoEventStore;
     use chrono::NaiveDate;
     use entities::todo_events::TodoCreatedEvent;
