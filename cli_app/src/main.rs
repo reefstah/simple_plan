@@ -5,6 +5,9 @@ use entities::todo_events::TodoCreatedEvent;
 use event_store::plannable_event_store::TodoEventStore;
 use usecases::add_todo_usecase::AddTodoUsecase;
 use usecases::add_todo_usecase::StoreTodoEvents;
+use usecases::get_todo_usecase::GetTodoEvents;
+use usecases::get_todo_usecase::GetTodoUsecase;
+use uuid::Uuid;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -32,6 +35,9 @@ enum TodoCommand {
         #[arg(value_parser = parse_duration)]
         end_date: Option<NaiveDateTime>,
     },
+    Get {
+        todo_id: Uuid,
+    },
 }
 
 fn parse_duration(date: &str) -> Result<NaiveDateTime, chrono::ParseError> {
@@ -57,6 +63,13 @@ impl StoreTodoEvents for CliEventStore {
         self.real_event_store.save(todo_events)
     }
 }
+
+impl GetTodoEvents for CliEventStore {
+    fn get(&mut self, todo_id: Uuid) -> Result<Vec<TodoCreatedEvent>, std::io::Error> {
+        self.real_event_store.read(todo_id)
+    }
+}
+
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
@@ -69,6 +82,17 @@ fn main() -> Result<()> {
                 let mut clieventstore = CliEventStore::new(database_url);
                 let usecase = AddTodoUsecase::new(&mut clieventstore);
                 let result = usecase.execute(title.to_string(), *end_date);
+                if result.is_ok() {
+                    println!("Todo Add Complete");
+                }
+            }
+            TodoCommand::Get { todo_id } => {
+                println!("{:?}", todo_id);
+                let database_url = "/tmp/test_plannable_events.db";
+                let mut clieventstore = CliEventStore::new(database_url);
+                let usecase = GetTodoUsecase::new(&mut clieventstore);
+                let result = usecase.execute(*todo_id).unwrap();
+                println!("{:?}", result);
             }
         },
     }

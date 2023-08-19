@@ -172,6 +172,7 @@ dependencies = [
  "entities",
  "event_store",
  "usecases",
+ "uuid",
 ]
 
 [[package]]
