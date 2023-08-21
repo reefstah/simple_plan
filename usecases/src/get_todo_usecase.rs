@@ -1,13 +1,12 @@
 use entities::todo_events::TodoCreatedEvent;
-use uuid::Uuid;
 
 pub struct GetTodoUsecase<'a> {
     get_todo_events: &'a mut dyn GetTodoEvents,
 }
 
 impl<'a> GetTodoUsecase<'a> {
-    pub fn execute(self, todo_id: Uuid) -> Result<Vec<TodoCreatedEvent>, std::io::Error> {
-        self.get_todo_events.get(todo_id)
+    pub fn execute(self) -> Result<Vec<TodoCreatedEvent>, std::io::Error> {
+        self.get_todo_events.get_all()
     }
     pub fn new(get_todo_events: &'a mut dyn GetTodoEvents) -> Self {
         Self { get_todo_events }
@@ -15,7 +14,7 @@ impl<'a> GetTodoUsecase<'a> {
 }
 
 pub trait GetTodoEvents {
-    fn get(&mut self, todo_id: Uuid) -> Result<Vec<TodoCreatedEvent>, std::io::Error>;
+    fn get_all(&mut self) -> Result<Vec<TodoCreatedEvent>, std::io::Error>;
 }
 
 #[cfg(test)]
@@ -39,17 +38,14 @@ mod tests {
                 real_event_store: eventstore,
             }
         }
-        fn get_all_todos(&mut self) -> Result<Vec<TodoCreatedEvent>, std::io::Error> {
-            self.real_event_store.get_all()
-        }
         fn save(&mut self, todo_events: Vec<TodoCreatedEvent>) -> Result<(), std::io::Error> {
             self.real_event_store.save(todo_events)
         }
     }
 
     impl GetTodoEvents for TestEventStore {
-        fn get(&mut self, todo_id: Uuid) -> Result<Vec<TodoCreatedEvent>, std::io::Error> {
-            self.real_event_store.read(todo_id)
+        fn get_all(&mut self) -> Result<Vec<TodoCreatedEvent>, std::io::Error> {
+            self.real_event_store.get_all()
         }
     }
 
@@ -74,7 +70,7 @@ mod tests {
         let usecase = GetTodoUsecase {
             get_todo_events: &mut eventstore,
         };
-        let result = usecase.execute(todo_id).unwrap();
+        let result = usecase.execute().unwrap();
         assert_eq!(result, plannables);
     }
 }
