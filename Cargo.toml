@@ -1,8 +1,11 @@
 [workspace]
+resolver = "2"
 
 members = [
+ "app",
  "cli_app",
  "event_store",
  "entities",
- "usecases"
+ "usecases",
+ "externals/apps/bevy_app"
 ]
