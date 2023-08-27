@@ -37,15 +37,13 @@ fn parse_duration(date: &str) -> Result<NaiveDateTime, chrono::ParseError> {
     end_date
 }
 
-pub struct CliApp<'a> {
-    add_todo_usecase_invoker: &'a mut dyn AddTodoUseCaseInvoker,
+pub struct CliApp<'a, I: AddTodoUseCaseInvoker + GetTodoUseCaseInvoker> {
+    usecase_invoker: &'a mut I,
 }
 
-impl<'a> CliApp<'a> {
-    pub fn new(add_todo_usecase_invoker: &'a mut impl AddTodoUseCaseInvoker) -> Self {
-        Self {
-            add_todo_usecase_invoker,
-        }
+impl<'a, I: AddTodoUseCaseInvoker + GetTodoUseCaseInvoker> CliApp<'a, I> {
+    pub fn new(usecase_invoker: &'a mut I) -> Self {
+        Self { usecase_invoker }
     }
 
     pub fn run(self) -> Result<()> {
@@ -56,11 +54,11 @@ impl<'a> CliApp<'a> {
                 TodoCommand::Add { title, end_date } => {
                     println!("{:?}", title);
                     println!("{:?}", end_date);
-                    self.add_todo_usecase_invoker
-                        .invoke(title.to_string(), *end_date);
+                    self.usecase_invoker
+                        .invoke_add_todo_usecase(title.to_string(), *end_date);
                 }
                 TodoCommand::Get => {
-                    todo!()
+                    self.usecase_invoker.invoke_get_todo_usecase();
                 } //                TodoCommand::Get => {
                   //                    let database_url = "/tmp/test_plannable_events.db";
                   //                    let mut clieventstore = CliEventStore::new(database_url);
@@ -75,5 +73,9 @@ impl<'a> CliApp<'a> {
 }
 
 pub trait AddTodoUseCaseInvoker {
-    fn invoke(&mut self, title: String, end_date: Option<NaiveDateTime>);
+    fn invoke_add_todo_usecase(&mut self, title: String, end_date: Option<NaiveDateTime>);
+}
+
+pub trait GetTodoUseCaseInvoker {
+    fn invoke_get_todo_usecase(&mut self);
 }
