@@ -3,9 +3,9 @@ resolver = "2"
 
 members = [
  "app",
- "cli_app",
- "event_store",
  "entities",
  "usecases",
- "externals/apps/bevy_app"
+ "externals/event_store",
+ "externals/apps/cli_app",
+ "externals/apps/bevy_app",
 ]

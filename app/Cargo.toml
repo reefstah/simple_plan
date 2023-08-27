@@ -6,8 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-cli_app = { path = "../cli_app" }
-usecases = { path = "../usecases" }
-event_store = { path = "../event_store" }
 entities = { path = "../entities" }
+usecases = { path = "../usecases" }
+cli_app = { path = "../externals/apps/cli_app" }
+event_store = { path = "../externals/event_store" }
 chrono = { version = "0.4.20", default-features = false, features = ["clock", "std"] }
