@@ -16,4 +16,4 @@ features = [
     "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
 ]
 [dev-dependencies]
-event_store = {path = "../externals/event_store"}
+event_store = {path = "../others/event_store"}

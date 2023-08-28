@@ -5,7 +5,7 @@ members = [
  "app",
  "entities",
  "usecases",
- "externals/event_store",
- "externals/apps/cli_app",
- "externals/apps/bevy_app",
+ "others/event_store",
+ "others/apps/cli_app",
+ "others/apps/bevy_app",
 ]

@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 entities = { path = "../entities" }
 usecases = { path = "../usecases" }
-cli_app = { path = "../externals/apps/cli_app" }
-event_store = { path = "../externals/event_store" }
+cli_app = { path = "../others/apps/cli_app" }
+event_store = { path = "../others/event_store" }
 chrono = { version = "0.4.20", default-features = false, features = ["clock", "std"] }
 anyhow = "1.0"
