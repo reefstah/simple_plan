@@ -1,6 +1,7 @@
 use anyhow::Result;
 use chrono::NaiveDateTime;
 use clap::{Parser, Subcommand};
+use entities::todo_events::TodoCreatedEvent;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -58,14 +59,9 @@ impl<'a, I: AddTodoUseCaseInvoker + GetTodoUseCaseInvoker> CliApp<'a, I> {
                         .invoke_add_todo_usecase(title.to_string(), *end_date);
                 }
                 TodoCommand::Get => {
-                    self.usecase_invoker.invoke_get_todo_usecase();
-                } //                TodoCommand::Get => {
-                  //                    let database_url = "/tmp/test_plannable_events.db";
-                  //                    let mut clieventstore = CliEventStore::new(database_url);
-                  //                    let usecase = GetTodoUsecase::new(&mut clieventstore);
-                  //                    let result = usecase.execute().unwrap();
-                  //                    println!("{:?}", result);
-                  //                }
+                    let result = self.usecase_invoker.invoke_get_todo_usecase();
+                    println!("{:?}", result);
+                }
             },
         }
         Ok(())
@@ -77,5 +73,5 @@ pub trait AddTodoUseCaseInvoker {
 }
 
 pub trait GetTodoUseCaseInvoker {
-    fn invoke_get_todo_usecase(&mut self);
+    fn invoke_get_todo_usecase(&mut self) -> Vec<TodoCreatedEvent>;
 }

@@ -1314,6 +1314,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "clap",
+ "entities",
  "uuid",
 ]
 

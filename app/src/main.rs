@@ -64,9 +64,9 @@ impl AddTodoUseCaseInvoker for App {
     }
 }
 impl GetTodoUseCaseInvoker for App {
-    fn invoke_get_todo_usecase(&mut self) {
+    fn invoke_get_todo_usecase(&mut self) -> Vec<TodoCreatedEvent> {
         GetTodoUsecase::new(&mut self.app_event_store)
             .execute()
-            .unwrap();
+            .unwrap()
     }
 }
