@@ -1,5 +1,6 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
+use entities::task_events::TaskCreatedEvent;
 use entities::todo_events::TodoCreatedEvent;
 use serde::{Deserialize, Serialize};
 use std::str;
@@ -44,6 +45,41 @@ impl From<PlannableEventRow> for TodoCreatedEvent {
         TodoCreatedEvent {
             event_id: Uuid::parse_str(str::from_utf8(&row.event_id).unwrap()).unwrap(),
             todo_id: Uuid::parse_str(&row.plannable_id).unwrap(),
+            sequence: row.sequence,
+            title: deserialized.title,
+            end_date: deserialized.end_date,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct TaskBody {
+    title: String,
+    end_date: Option<NaiveDateTime>,
+}
+
+impl From<TaskCreatedEvent> for PlannableEventRow {
+    fn from(task_created_events: TaskCreatedEvent) -> Self {
+        let body = TaskBody {
+            title: task_created_events.title,
+            end_date: task_created_events.end_date,
+        };
+        PlannableEventRow {
+            event_id: task_created_events.event_id.to_string().into(),
+            plannable_id: task_created_events.task_id.to_string(),
+            sequence: task_created_events.sequence,
+            body: serde_json::to_string(&body).unwrap().into(),
+        }
+    }
+}
+
+impl From<PlannableEventRow> for TaskCreatedEvent {
+    fn from(row: PlannableEventRow) -> Self {
+        let deserialized: TaskBody =
+            serde_json::from_str(str::from_utf8(&row.body).unwrap()).unwrap();
+        TaskCreatedEvent {
+            event_id: Uuid::parse_str(str::from_utf8(&row.event_id).unwrap()).unwrap(),
+            task_id: Uuid::parse_str(&row.plannable_id).unwrap(),
             sequence: row.sequence,
             title: deserialized.title,
             end_date: deserialized.end_date,

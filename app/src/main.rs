@@ -3,7 +3,7 @@ use chrono::NaiveDateTime;
 use cli_app::AddTodoUseCaseInvoker;
 use cli_app::GetTodoUseCaseInvoker;
 use entities::todo_events::TodoCreatedEvent;
-use event_store::plannable_event_store::TodoEventStore;
+use event_store::plannable_todo_event_store::TodoEventStore;
 use usecases::add_todo_usecase::AddTodoUsecase;
 use usecases::add_todo_usecase::StoreTodoEvents;
 use usecases::get_todo_usecase::GetTodoEvents;

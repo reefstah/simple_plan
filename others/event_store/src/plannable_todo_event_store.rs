@@ -64,7 +64,7 @@ impl TodoEventStore {
 #[cfg(test)]
 mod tests {
 
-    use crate::plannable_event_store::TodoEventStore;
+    use crate::plannable_todo_event_store::TodoEventStore;
     use chrono::NaiveDate;
     use entities::todo_events::TodoCreatedEvent;
     use uuid::Uuid;

@@ -23,7 +23,7 @@ mod tests {
     use crate::get_todo_usecase::GetTodoEvents;
     use chrono::NaiveDate;
     use entities::todo_events::TodoCreatedEvent;
-    use event_store::plannable_event_store::TodoEventStore;
+    use event_store::plannable_todo_event_store::TodoEventStore;
     use uuid::Uuid;
     //Used for testing to call store functions
     struct TestEventStore {
